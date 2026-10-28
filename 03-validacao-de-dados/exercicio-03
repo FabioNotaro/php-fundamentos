@@ -1,0 +1,92 @@
+<?php
+
+declare(strict_types=1);
+
+$dados = [
+    'id' => '25',
+    'nome' => 'Ana Silva',
+    'email' => 'ana@example.com',
+    'idade' => '21',
+    'ativo' => 'true'
+];
+
+/*
+    Sua missão será criar uma validação que transforme esses dados em informações 
+    seguras para utilização no sistema.
+    2. Regras de validação
+    Campo	Regra
+    id	Obrigatório, somente dígitos e inteiro maior que zero
+    nome	Obrigatório, string não vazia após remover espaços das extremidades
+    email	Obrigatório, endereço de e-mail com formato válido
+    idade	Obrigatório, inteiro entre 18 e 120
+    ativo	Obrigatório, aceitar representações reconhecidas de verdadeiro ou falso
+
+    Atenção especial ao campo ativo: os valores "false" e "0" devem ser convertidos para o 
+    booleano false, enquanto valores inválidos, como "banana", devem ser rejeitados.
+
+    Você já conhece ferramentas nativas que podem ajudar: ctype_digit(), is_numeric(), 
+    filter_var(), trim() e operadores de comparação estrita.
+ */
+
+function validarDados(array $dados): array
+{
+    if (
+        !isset($dados['id']) ||
+        !is_string($dados['id']) ||
+        !ctype_digit($dados['id'])
+    ) {
+        throw new InvalidArgumentException("ID inválido.");
+    }
+
+    $id = filter_var(
+        $dados['id'],
+        FILTER_VALIDATE_INT,
+        ['options' => ['min_range' => 1]]
+    );
+
+    if ($id === false) {
+        throw new InvalidArgumentException(
+            "ID fora do intervalo permitido."
+        );
+    }
+
+    $dados['id'] = $id;
+
+    if(isset($dados['nome']) && is_string($dados['nome']) && trim($dados['nome']) !== '') {
+        $dados['nome'] = trim($dados['nome']);
+    } else {
+        throw new InvalidArgumentException("O campo 'nome' é obrigatório e não pode estar vazio.");
+    }
+
+    if(!isset($dados['email']) || !is_string($dados['email']) || !filter_var($dados['email'], FILTER_VALIDATE_EMAIL)) {
+        throw new InvalidArgumentException("O campo 'email' é obrigatório e deve ser um endereço de e-mail válido.");
+    }
+
+    if(isset($dados['idade']) && is_string($dados['idade']) && ctype_digit($dados['idade']) && (int)$dados['idade'] >= 18 && (int)$dados['idade'] <= 120) {
+        $dados['idade'] = (int)$dados['idade'];
+    } else {
+        throw new InvalidArgumentException("O campo 'idade' é obrigatório e deve ser um inteiro entre 18 e 120.");
+    }
+
+    if(isset($dados['ativo']) && is_string($dados['ativo'])) {
+        $ativo = strtolower(trim($dados['ativo']));
+        if($ativo === 'true' || $ativo === '1') {
+            $dados['ativo'] = true;
+        } elseif($ativo === 'false' || $ativo === '0') {
+            $dados['ativo'] = false;
+        } else {
+            throw new InvalidArgumentException("O campo 'ativo' é obrigatório e deve ser um valor booleano válido.");
+        }
+    } else {
+        throw new InvalidArgumentException("O campo 'ativo' é obrigatório e deve ser um valor booleano válido.");
+    }
+
+    return $dados;
+}
+
+try {
+    $dadosValidados = validarDados($dados);
+    var_dump($dadosValidados);
+} catch (InvalidArgumentException $e) {
+    echo "Erro de validação: " . $e->getMessage();
+}
